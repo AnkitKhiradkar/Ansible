@@ -1,0 +1,18 @@
+--- #hosting war file using playbook
+
+- hosts: devlinux
+  user: ansible
+  become: yes
+  connection: ssh
+  gather_facts: yes
+
+  tasks:
+    - name: install git
+      action: yum pkg=git state=present
+
+    - name: install java
+      action: yum pkg=java state=present
+
+    - name: maven zip download
+      action:  
+
