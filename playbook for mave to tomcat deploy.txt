@@ -1,0 +1,90 @@
+
+
+
+
+[ansible@ip-172-31-10-96 ~]$ cat test.yaml
+---
+- hosts: webserver
+  user: ansible
+  become: yes
+  connection: ssh
+  gather_facts: yes
+
+
+
+  vars:
+    Path: "export MAVEN_HOME=/home/ansible/maven/apache-maven-3.8.6"
+    Path2: "export PATH=$MAVEN_HOME/bin:$PATH"
+
+
+  tasks:
+   
+    - name: java install
+      action: yum pkg=java-1.8.0-openjdk-devel.x86_64 state=present
+
+
+    - name: create Tomcat dir
+      action: file path=/home/ansible/tomcat state=directory
+ 
+
+    - name: install tomcat in dir
+      action: get_url url=https://downloads.apache.org/tomcat/tomcat-9/v9.0.67/bin/apache-tomcat-9.0.67.zip dest=/home/ansible/tomcat
+
+
+    - name: unzip tomcat
+      action: unarchive src=/home/ansible/tomcat/apache-tomcat-9.0.67.zip dest=/home/ansible/tomcat/ remote_src=yes
+
+
+    - name: giving ownership to tomcat
+      action: file path=/home/ansible/tomcat/apache-tomcat-9.0.67 state=directory owner=ansible group=ansible mode=777 recurse=yes
+
+
+    - name: permission to catalina and startup.sh
+      action: file path=/home/ansible/tomcat/apache-tomcat-9.0.67/bin/ state=directory mode=777 recurse=yes
+
+
+    - name: start Tomcat
+      command: "nohup /home/ansible/tomcat/apache-tomcat-9.0.67/bin/startup.sh"
+
+
+    - name: create maven dir
+      action: file path=/home/ansible/maven state=directory
+  	
+  
+    - name: install maven
+      action: get_url url=https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.zip dest=/home/ansible/maven
+
+
+    - name: giving ownership to maven zip
+      action: file path=/home/ansiblet/maven/apache-maven-3.8.6-bin.zip  state=directory owner=ansible group=ansible mode=777 recurse=yes
+
+
+    - name: unzip maven
+      action: unarchive src=/home/ansible/maven/apache-maven-3.8.6-bin.zip dest=/home/ansible/maven remote_src=yes
+
+
+    - name: bash_profile_1
+      action: lineinfile path=/home/ansible/.bash_profile line="{{Path}}" insertafter=bin*
+
+
+    - name: bash_profile_2
+      action: lineinfile path=/home/ansible/.bash_profile line="{{Path2}}" insertbefore=PATH*
+
+    - name: create git dir
+      action: file path=/home/ansible/git state=director
+
+
+    - name: install git
+      action: yum pkg=git state=present
+
+
+    - name: git clone
+      action: git repo=https://github.com/ashrayp18/game-of-life.git dest=/home/ansible/git/
+
+
+    - name: command for maven
+      command: mvn -f /home/ansible/git/pom.xml install
+
+
+    - name: copy war from git to tomcat
+      action: copy src=/home/ansible/git/gameoflife-web/target/gameoflife.war dest=/home/ansible/tomcat/apache-tomcat-9.0.67/webapps/ remote_src=yes
